@@ -1,41 +1,44 @@
 using UnityEngine;
 
-public class Screen : MonoBehaviour
+namespace VirtualGPU
 {
-    [Header("Screen Parameters")]
-    public int Width = 800;
-    public int Height = 600;
-
-    [Header("References")]
-    [SerializeField] Transform displayObject;
-
-    Material displayMaterial;
-    Texture2D displayTexture;
-
-    public void Draw(Color[] pixels)
+    public class Screen : MonoBehaviour
     {
-        displayTexture.SetPixels(pixels);
-        displayTexture.Apply();
-    }
+        [Header("Screen Parameters")]
+        public int Width = 800;
+        public int Height = 600;
 
-    private void Awake()
-    {
-        displayTexture = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
-        displayTexture.filterMode = FilterMode.Point;
-        displayTexture.wrapMode = TextureWrapMode.Clamp;
-        displayTexture.anisoLevel = 0;
+        [Header("References")]
+        [SerializeField] UnityEngine.Transform displayObject;
 
-        displayMaterial = displayObject.GetComponent<MeshRenderer>().material;
-        displayMaterial.mainTexture = displayTexture;
+        Material displayMaterial;
+        Texture2D displayTexture;
 
-        displayObject.localScale = new Vector3(Width / 100f, -Height / 100f, 1f);
-    }
-
-    private void OnValidate()
-    {
-        if (displayObject != null)
+        public void Draw(Color[] pixels)
         {
+            displayTexture.SetPixels(pixels);
+            displayTexture.Apply();
+        }
+
+        private void Awake()
+        {
+            displayTexture = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
+            displayTexture.filterMode = FilterMode.Point;
+            displayTexture.wrapMode = TextureWrapMode.Clamp;
+            displayTexture.anisoLevel = 0;
+
+            displayMaterial = displayObject.GetComponent<MeshRenderer>().material;
+            displayMaterial.mainTexture = displayTexture;
+
             displayObject.localScale = new Vector3(Width / 100f, -Height / 100f, 1f);
+        }
+
+        private void OnValidate()
+        {
+            if (displayObject != null)
+            {
+                displayObject.localScale = new Vector3(Width / 100f, -Height / 100f, 1f);
+            }
         }
     }
 }

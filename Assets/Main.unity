@@ -348,6 +348,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d59a95d5fee7d0c49b2cbf91d25cd165, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  wireframe: 1
+  scale: 1
   screen: {fileID: 167458314}
   gpu: {fileID: 1821353211}
 --- !u!1 &482457597
