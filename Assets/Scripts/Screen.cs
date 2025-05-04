@@ -20,7 +20,6 @@ public class Screen : MonoBehaviour
 
     private void Awake()
     {
-
         displayTexture = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
         displayTexture.filterMode = FilterMode.Point;
         displayTexture.wrapMode = TextureWrapMode.Clamp;
@@ -29,14 +28,14 @@ public class Screen : MonoBehaviour
         displayMaterial = displayObject.GetComponent<MeshRenderer>().material;
         displayMaterial.mainTexture = displayTexture;
 
-        displayObject.localScale = new Vector3(Width / 1000f, 1f, Height / 1000f);
+        displayObject.localScale = new Vector3(Width / 100f, -Height / 100f, 1f);
     }
 
     private void OnValidate()
     {
         if (displayObject != null)
         {
-            displayObject.localScale = new Vector3(Width / 1000f, 1f, Height / 1000f);
+            displayObject.localScale = new Vector3(Width / 100f, -Height / 100f, 1f);
         }
     }
 }

@@ -13,14 +13,7 @@ public class Software : MonoBehaviour
     void RenderFrame()
     {
         gpu.Clear(Color.black);
-        for (int y = 0; y < screen.Height; y++)
-        {
-            for (int x = 0; x < screen.Width; x++)
-            {
-                Color color = new Color((float)x / screen.Width, (float)y / screen.Height, 0.5f);
-                gpu.SetPixel(x, y, color);
-            }
-        }
+        gpu.DrawTriangle(new Vec2(100, 100), new Vec2(200, 300), new Vec2(300, 100), Color.red);
         gpu.Present();
     }
 
