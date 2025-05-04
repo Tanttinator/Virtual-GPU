@@ -24,6 +24,6 @@ public class UVShader : Shader
 {
     public override Color Fragment(Vec2 uv)
     {
-        return new Color(uv.x, uv.y, 0.5f, 1.0f);
+        return new Color(uv.x, uv.y, 0.0f, 1.0f);
     }
 }

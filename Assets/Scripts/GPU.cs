@@ -4,19 +4,70 @@ public class GPU : MonoBehaviour
 {
     [SerializeField] Screen screen;
 
+    Vertex[] vertexBuffer;
+    int[] indexBuffer;
     Framebuffer framebuffer;
 
+    // INTERFACE
     public void Clear(Color color)
     {
         framebuffer.Clear(color);
     }
 
-    public void SetPixel(int x, int y, Color color)
+    public void SetVertexBuffer(Vertex[] vertices)
+    {
+        vertexBuffer = vertices;
+    }
+
+    public void SetIndexBuffer(int[] indices)
+    {
+        indexBuffer = indices;
+    }
+
+    public void Draw(Shader shader)
+    {
+        for (int i = 0; i < indexBuffer.Length; i += 3)
+        {
+            int index0 = indexBuffer[i];
+            int index1 = indexBuffer[i + 1];
+            int index2 = indexBuffer[i + 2];
+
+            Vertex v0 = vertexBuffer[index0];
+            Vertex v1 = vertexBuffer[index1];
+            Vertex v2 = vertexBuffer[index2];
+
+            DrawTriangle(v0, v1, v2, shader);
+        }
+    }
+
+    public void DrawWireframe()
+    {
+        for (int i = 0; i < indexBuffer.Length; i += 3)
+        {
+            int index0 = indexBuffer[i];
+            int index1 = indexBuffer[i + 1];
+            int index2 = indexBuffer[i + 2];
+
+            Vertex v0 = vertexBuffer[index0];
+            Vertex v1 = vertexBuffer[index1];
+            Vertex v2 = vertexBuffer[index2];
+
+            DrawWireframeTriangle(v0.Position, v1.Position, v2.Position, Color.white);
+        }
+    }
+
+    public void Present()
+    {
+        screen.Draw(framebuffer.ColorBuffer);
+    }
+
+    // INTERNAL
+    void SetPixel(int x, int y, Color color)
     {
         framebuffer.SetPixel(x, y, color);
     }
 
-    public void DrawLine(int x0, int y0, int x1, int y1, Color color)
+    void DrawLine(int x0, int y0, int x1, int y1, Color color)
     {
         int dx = Mathf.Abs(x1 - x0);
         int dy = -Mathf.Abs(y1 - y0);
@@ -44,14 +95,14 @@ public class GPU : MonoBehaviour
         }
     }
 
-    public void DrawWireframeTriangle(Vec2 v0, Vec2 v1, Vec2 v2, Color color)
+    void DrawWireframeTriangle(Vec2 v0, Vec2 v1, Vec2 v2, Color color)
     {
         DrawLine((int)v0.x, (int)v0.y, (int)v1.x, (int)v1.y, color);
         DrawLine((int)v1.x, (int)v1.y, (int)v2.x, (int)v2.y, color);
         DrawLine((int)v2.x, (int)v2.y, (int)v0.x, (int)v0.y, color);
     }
 
-    public void DrawTriangle(Vertex v0, Vertex v1, Vertex v2, Shader shader)
+    void DrawTriangle(Vertex v0, Vertex v1, Vertex v2, Shader shader)
     {
         float minX = Mathf.Min(v0.Position.x, v1.Position.x, v2.Position.x);
         float maxX = Mathf.Max(v0.Position.x, v1.Position.x, v2.Position.x);
@@ -73,11 +124,6 @@ public class GPU : MonoBehaviour
                 SetPixel(x, y, shader.Fragment(uv));
             }
         }
-    }
-
-    public void Present()
-    {
-        screen.Draw(framebuffer.ColorBuffer);
     }
 
     float SignedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
