@@ -51,22 +51,26 @@ public class GPU : MonoBehaviour
         DrawLine((int)v2.x, (int)v2.y, (int)v0.x, (int)v0.y, color);
     }
 
-    public void DrawTriangle(Vec2 v0, Vec2 v1, Vec2 v2, Color color)
+    public void DrawTriangle(Vertex v0, Vertex v1, Vertex v2, Shader shader)
     {
-        float minX = Mathf.Min(v0.x, v1.x, v2.x);
-        float maxX = Mathf.Max(v0.x, v1.x, v2.x);
-        float minY = Mathf.Min(v0.y, v1.y, v2.y);
-        float maxY = Mathf.Max(v0.y, v1.y, v2.y);
+        float minX = Mathf.Min(v0.Position.x, v1.Position.x, v2.Position.x);
+        float maxX = Mathf.Max(v0.Position.x, v1.Position.x, v2.Position.x);
+        float minY = Mathf.Min(v0.Position.y, v1.Position.y, v2.Position.y);
+        float maxY = Mathf.Max(v0.Position.y, v1.Position.y, v2.Position.y);
+
+        float area = SignedTriangleArea(v0.Position, v1.Position, v2.Position);
 
         for (int x = (int)minX; x <= (int)maxX; x++)
         {
             for (int y = (int)minY; y <= (int)maxY; y++)
             {
                 Vec2 p = new Vec2(x, y);
-                if (IsPointInTriangle(p, v0, v1, v2))
-                {
-                    SetPixel(x, y, color);
-                }
+                float alpha = SignedTriangleArea(p, v1.Position, v2.Position) / area;
+                float beta = SignedTriangleArea(p, v2.Position, v0.Position) / area;
+                float gamma = SignedTriangleArea(p, v0.Position, v1.Position) / area;
+                if (alpha < 0 || beta < 0 || gamma < 0) continue;
+                Vec2 uv = alpha * v0.UV + beta * v1.UV + gamma * v2.UV;
+                SetPixel(x, y, shader.Fragment(uv));
             }
         }
     }
@@ -76,13 +80,14 @@ public class GPU : MonoBehaviour
         screen.Draw(framebuffer.ColorBuffer);
     }
 
-    bool IsPointInTriangle(Vec2 p, Vec2 v0, Vec2 v1, Vec2 v2)
+    float SignedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
     {
-        float area = 0.5f * (-v1.y * v2.x + v0.y * (-v1.x + v2.x) + v0.x * (v1.y - v2.y) + v1.x * v2.y);
-        float s = 1f / (2f * area) * (v0.y * v2.x - v0.x * v2.y + (v2.y - v0.y) * p.x + (v0.x - v2.x) * p.y);
-        float t = 1f / (2f * area) * (v0.x * v1.y - v0.y * v1.x + (v0.y - v1.y) * p.x + (v1.x - v0.x) * p.y);
+        return SignedTriangleArea(a.x, a.y, b.x, b.y, c.x, c.y);
+    }
 
-        return s >= 0 && t >= 0 && (s + t) <= 1;
+    float SignedTriangleArea(float x0, float y0, float x1, float y1, float x2, float y2)
+    {
+        return (x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1)) / 2.0f;
     }
 
     private void Awake()
