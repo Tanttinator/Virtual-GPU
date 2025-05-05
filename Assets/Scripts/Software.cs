@@ -5,9 +5,16 @@ namespace VirtualGPU
 {
     public class Software : MonoBehaviour
     {
+        public enum CameraType
+        {
+            Perspective,
+            Orthographic
+        }
+
         [Header("Program Parameters")]
         [SerializeField] bool wireframe = false;
         [SerializeField] float scale = 1.0f;
+        [SerializeField] CameraType cameraType = CameraType.Perspective;
 
         [Header("Resources")]
         [SerializeField] Screen screen;
@@ -21,7 +28,8 @@ namespace VirtualGPU
         Mesh billCypher;
         new Transform transform;
 
-        new Camera camera;
+        PerspectiveCamera perspectiveCamera;
+        OrthographicCamera orthographicCamera;
 
         IEnumerator RunProgram()
         {
@@ -57,8 +65,13 @@ namespace VirtualGPU
             transform = new Transform();
             transform.Scale = new Vec3(scale, scale, 1);
 
-            camera = new Camera(screen.Width, screen.Height);
-            camera.Transform.Position = new Vec3(0, 0, 10);
+            perspectiveCamera = new PerspectiveCamera(screen.Width, screen.Height);
+            perspectiveCamera.FieldOfView = 120.0f;
+            perspectiveCamera.Transform.Position = new Vec3(0, 0, 2.5f);
+
+            orthographicCamera = new OrthographicCamera(screen.Width, screen.Height);
+            orthographicCamera.Size = 2.0f;
+            orthographicCamera.Transform.Position = new Vec3(0, 0, 2.5f);
 
             while (true)
             {
@@ -71,6 +84,17 @@ namespace VirtualGPU
         void OnUpdate()
         {
             transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
+
+            if (Input.GetKey(KeyCode.W))
+            {
+                perspectiveCamera.Transform.Position += new Vec3(0, 0, -1) * Time.deltaTime;
+                orthographicCamera.Transform.Position += new Vec3(0, 0, -1) * Time.deltaTime;
+            }
+            if (Input.GetKey(KeyCode.S))
+            {
+                perspectiveCamera.Transform.Position += new Vec3(0, 0, 1) * Time.deltaTime;
+                orthographicCamera.Transform.Position += new Vec3(0, 0, 1) * Time.deltaTime;
+            }
         }
 
         void RenderFrame()
@@ -81,6 +105,16 @@ namespace VirtualGPU
 
             gpu.BindVertexBuffer(mesh.Vertices);
             gpu.BindIndexBuffer(mesh.Indices);
+
+            Camera camera = null;
+            if (cameraType == CameraType.Perspective)
+            {
+                camera = perspectiveCamera;
+            }
+            else if (cameraType == CameraType.Orthographic)
+            {
+                camera = orthographicCamera;
+            }
 
             Shader shader = vertexColorShader;
             shader.Uniforms.MVPMatrix = camera.GetProjectionMatrix() * camera.GetViewMatrix() * transform.GetModelMatrix();

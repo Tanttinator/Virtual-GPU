@@ -109,8 +109,8 @@ namespace VirtualGPU
             Vec3[] ndc = new Vec3[]
             {
                 varyings[0].ClipPos / varyings[0].ClipPos.w,
-                varyings[1].ClipPos / varyings[0].ClipPos.w,
-                varyings[2].ClipPos / varyings[0].ClipPos.w
+                varyings[1].ClipPos / varyings[1].ClipPos.w,
+                varyings[2].ClipPos / varyings[2].ClipPos.w
             };
 
             Vec3[] screenPos = new Vec3[]
@@ -120,9 +120,16 @@ namespace VirtualGPU
                 new Vec3((ndc[2].x * 0.5f + 0.5f) * screen.Width, (-ndc[2].y * 0.5f + 0.5f) * screen.Height, ndc[2].z * 0.5f + 0.5f)
             };
 
-            DrawLine((int)screenPos[0].x, (int)screenPos[0].y, (int)screenPos[1].x, (int)screenPos[1].y, color);
-            DrawLine((int)screenPos[1].x, (int)screenPos[1].y, (int)screenPos[2].x, (int)screenPos[2].y, color);
-            DrawLine((int)screenPos[2].x, (int)screenPos[2].y, (int)screenPos[0].x, (int)screenPos[0].y, color);
+            int x0 = Mathf.RoundToInt(screenPos[0].x);
+            int y0 = Mathf.RoundToInt(screenPos[0].y);
+            int x1 = Mathf.RoundToInt(screenPos[1].x);
+            int y1 = Mathf.RoundToInt(screenPos[1].y);
+            int x2 = Mathf.RoundToInt(screenPos[2].x);
+            int y2 = Mathf.RoundToInt(screenPos[2].y);
+
+            DrawLine(x0, y0, x1, y1, color);
+            DrawLine(x1, y1, x2, y2, color);
+            DrawLine(x2, y2, x0, y0, color);
         }
 
         void DrawTriangle(Vertex v0, Vertex v1, Vertex v2, Shader shader)
@@ -137,8 +144,8 @@ namespace VirtualGPU
             Vec3[] ndc = new Vec3[]
             {
                 varyings[0].ClipPos / varyings[0].ClipPos.w,
-                varyings[1].ClipPos / varyings[0].ClipPos.w,
-                varyings[2].ClipPos / varyings[0].ClipPos.w
+                varyings[1].ClipPos / varyings[1].ClipPos.w,
+                varyings[2].ClipPos / varyings[2].ClipPos.w
             };
 
             Vec3[] screenPos = new Vec3[]
@@ -148,16 +155,16 @@ namespace VirtualGPU
                 new Vec3((ndc[2].x * 0.5f + 0.5f) * screen.Width, (-ndc[2].y * 0.5f + 0.5f) * screen.Height, ndc[2].z * 0.5f + 0.5f)
             };
 
-            float minX = Mathf.Max(0f, Mathf.Min(screenPos[0].x, screenPos[1].x, screenPos[2].x));
-            float maxX = Mathf.Min(screen.Width - 1, Mathf.Max(screenPos[0].x, screenPos[1].x, screenPos[2].x));
-            float minY = Mathf.Max(0f, Mathf.Min(screenPos[0].y, screenPos[1].y, screenPos[2].y));
-            float maxY = Mathf.Min(screen.Height - 1, Mathf.Max(screenPos[0].y, screenPos[0].y, screenPos[2].y));
+            int minX = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
+            int maxX = Mathf.RoundToInt(Mathf.Min(screen.Width - 1, Mathf.Max(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
+            int minY = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].y, screenPos[1].y, screenPos[2].y)));
+            int maxY = Mathf.RoundToInt(Mathf.Min(screen.Height - 1, Mathf.Max(screenPos[0].y, screenPos[0].y, screenPos[2].y)));
 
             float area = SignedTriangleArea(screenPos[0], screenPos[1], screenPos[2]);
 
-            for (int x = (int)minX; x <= (int)maxX; x++)
+            for (int x = minX; x <= maxX; x++)
             {
-                for (int y = (int)minY; y <= (int)maxY; y++)
+                for (int y = minY; y <= maxY; y++)
                 {
                     Vec2 p = new Vec2(x, y);
                     float alpha = SignedTriangleArea(p, screenPos[1], screenPos[2]) / area;
