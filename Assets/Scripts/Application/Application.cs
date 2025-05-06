@@ -68,6 +68,7 @@ namespace VirtualGPU
             };
 
             transform = new Transform();
+            transform.Rotation = new Vec3(0, Mathf.PI / 4, 0);
             transform.Scale = new Vec3(scale, scale, 1);
 
             perspectiveCamera = new PerspectiveCamera(screen.Width, screen.Height);
@@ -91,8 +92,8 @@ namespace VirtualGPU
 
         void OnUpdate()
         {
-            transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
-            //directionalLight.Transform.Rotation += new Vec3(1, 0, 0) * Time.deltaTime;
+            //transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
+            directionalLight.Transform.Rotation += new Vec3(1, 0, 0) * Time.deltaTime;
             //perspectiveCamera.Transform.Rotation += new Vec3(1, 0, 0) * Time.deltaTime;
 
             if (Input.GetKey(KeyCode.W))

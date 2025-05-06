@@ -22,6 +22,7 @@ namespace VirtualGPU
             for (int i = 0; i < ColorBuffer.Length; i++)
             {
                 ColorBuffer[i] = color;
+                DepthBuffer[i] = float.MaxValue;
             }
         }
 

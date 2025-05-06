@@ -171,7 +171,7 @@ namespace VirtualGPU
                     if (alpha < 0 || beta < 0 || gamma < 0) continue;
 
                     float z = alpha * screenPos[0].z + beta * screenPos[1].z + gamma * screenPos[2].z;
-                    // TODO: Depth test
+                    if (framebuffer.ReadDepth(x, y) < z) continue;
 
                     FragmentData data = new FragmentData
                     {
