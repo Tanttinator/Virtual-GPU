@@ -80,7 +80,7 @@ namespace VirtualGPU
             orthographicCamera.Transform.Position = new Vec3(0, 0, 2.5f);
 
             directionalLight = new DirectionalLight(Color.white);
-            directionalLight.Transform.Rotation = new Vec3(0, 0, 0);
+            directionalLight.Transform.Rotation = new Vec3(0, Mathf.PI, 0);
 
             while (true)
             {
@@ -92,19 +92,29 @@ namespace VirtualGPU
 
         void OnUpdate()
         {
-            //transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
-            directionalLight.Transform.Rotation += new Vec3(1, 0, 0) * Time.deltaTime;
+            transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
+            //directionalLight.Transform.Rotation += new Vec3(0, 1, 0) * Time.deltaTime;
             //perspectiveCamera.Transform.Rotation += new Vec3(1, 0, 0) * Time.deltaTime;
 
             if (Input.GetKey(KeyCode.W))
             {
-                perspectiveCamera.Transform.Position += new Vec3(0, 0, -1) * Time.deltaTime;
-                orthographicCamera.Transform.Position += new Vec3(0, 0, -1) * Time.deltaTime;
+                perspectiveCamera.Transform.Position += perspectiveCamera.Transform.Forward * Time.deltaTime;
+                orthographicCamera.Transform.Position += perspectiveCamera.Transform.Forward * Time.deltaTime;
             }
             if (Input.GetKey(KeyCode.S))
             {
-                perspectiveCamera.Transform.Position += new Vec3(0, 0, 1) * Time.deltaTime;
-                orthographicCamera.Transform.Position += new Vec3(0, 0, 1) * Time.deltaTime;
+                perspectiveCamera.Transform.Position -= perspectiveCamera.Transform.Forward * Time.deltaTime;
+                orthographicCamera.Transform.Position -= perspectiveCamera.Transform.Forward * Time.deltaTime;
+            }
+            if (Input.GetKey(KeyCode.A))
+            {
+                perspectiveCamera.Transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
+                orthographicCamera.Transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
+            }
+            if (Input.GetKey(KeyCode.D))
+            {
+                perspectiveCamera.Transform.Rotation += new Vec3(0, -1f, 0) * Time.deltaTime;
+                orthographicCamera.Transform.Rotation += new Vec3(0, -1f, 0) * Time.deltaTime;
             }
         }
 
@@ -128,7 +138,9 @@ namespace VirtualGPU
             }
 
             Shader shader = litShader;
-            shader.Uniforms.MVPMatrix = camera.GetProjectionMatrix() * camera.GetViewMatrix() * transform.GetModelMatrix();
+            shader.Uniforms.ModelMatrix = transform.GetModelMatrix();
+            shader.Uniforms.ViewMatrix = camera.GetViewMatrix();
+            shader.Uniforms.ProjectionMatrix = camera.GetProjectionMatrix();
             shader.Uniforms.AmbientLight = ambientLight;
             shader.Uniforms.MainLight = directionalLight;
 

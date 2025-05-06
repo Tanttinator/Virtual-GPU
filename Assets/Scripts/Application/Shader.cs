@@ -9,7 +9,8 @@ namespace VirtualGPU
         public virtual Varyings Vertex(Vertex vertex)
         {
             Varyings varyings = new Varyings();
-            varyings.ClipPos = Uniforms.MVPMatrix * new Vec4(vertex.Position, 1.0f);
+            varyings.WorldPos = Uniforms.ModelMatrix * vertex.Position;
+            varyings.ClipPos = Uniforms.ProjectionMatrix * Uniforms.ViewMatrix * new Vec4(varyings.WorldPos, 1f);
             varyings.UV = vertex.UV;
             varyings.Normal = vertex.Normal;
             varyings.Color = vertex.Color;
@@ -24,6 +25,7 @@ namespace VirtualGPU
 
     public class Varyings
     {
+        public Vec3 WorldPos;
         public Vec4 ClipPos;
         public Vec2 UV;
         public Vec3 Normal;
@@ -40,7 +42,9 @@ namespace VirtualGPU
 
     public class Uniform
     {
-        public Mat4 MVPMatrix;
+        public Mat4 ModelMatrix;
+        public Mat4 ViewMatrix;
+        public Mat4 ProjectionMatrix;
         public Color AmbientLight;
         public DirectionalLight MainLight;
     }

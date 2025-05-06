@@ -151,12 +151,12 @@ namespace VirtualGPU
                 ClipToScreenPos(varyings[2].ClipPos)
             };
 
-            Vec3 normal = Vec3.Cross(screenPos[1] - screenPos[0], screenPos[2] - screenPos[0]).Normalize();
+            Vec3 normal = Vec3.Cross(varyings[1].WorldPos - varyings[0].WorldPos, varyings[2].WorldPos - varyings[0].WorldPos).Normalize();
 
             int minX = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
             int maxX = Mathf.RoundToInt(Mathf.Min(screen.Width - 1, Mathf.Max(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
             int minY = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].y, screenPos[1].y, screenPos[2].y)));
-            int maxY = Mathf.RoundToInt(Mathf.Min(screen.Height - 1, Mathf.Max(screenPos[0].y, screenPos[0].y, screenPos[2].y)));
+            int maxY = Mathf.RoundToInt(Mathf.Min(screen.Height - 1, Mathf.Max(screenPos[0].y, screenPos[1].y, screenPos[2].y)));
 
             float area = SignedTriangleArea(screenPos[0], screenPos[1], screenPos[2]);
 
