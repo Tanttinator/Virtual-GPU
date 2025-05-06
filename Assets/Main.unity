@@ -315,7 +315,7 @@ GameObject:
   - component: {fileID: 441193704}
   - component: {fileID: 441193705}
   m_Layer: 0
-  m_Name: Software
+  m_Name: Application
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -348,8 +348,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d59a95d5fee7d0c49b2cbf91d25cd165, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wireframe: 1
+  wireframe: 0
   scale: 1
+  cameraType: 0
   screen: {fileID: 167458314}
   gpu: {fileID: 1821353211}
 --- !u!1 &482457597

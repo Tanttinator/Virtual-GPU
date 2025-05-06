@@ -66,7 +66,7 @@ namespace VirtualGPU
         // INTERNAL
         void SetPixel(int x, int y, Color color)
         {
-            framebuffer.SetPixel(x, y, color);
+            framebuffer.WriteColor(x, y, color);
         }
 
         void DrawLine(int x0, int y0, int x1, int y1, Color color)
@@ -141,19 +141,17 @@ namespace VirtualGPU
                 shader.Vertex(v2)
             };
 
-            Vec3[] ndc = new Vec3[]
-            {
-                varyings[0].ClipPos / varyings[0].ClipPos.w,
-                varyings[1].ClipPos / varyings[1].ClipPos.w,
-                varyings[2].ClipPos / varyings[2].ClipPos.w
-            };
+            bool behind = varyings[0].ClipPos.w <= 0 && varyings[1].ClipPos.w <= 0 && varyings[2].ClipPos.w <= 0;
+            if (behind) return;
 
             Vec3[] screenPos = new Vec3[]
             {
-                new Vec3((ndc[0].x * 0.5f + 0.5f) * screen.Width, (-ndc[0].y * 0.5f + 0.5f) * screen.Height, ndc[0].z * 0.5f + 0.5f),
-                new Vec3((ndc[1].x * 0.5f + 0.5f) * screen.Width, (-ndc[1].y * 0.5f + 0.5f) * screen.Height, ndc[1].z * 0.5f + 0.5f),
-                new Vec3((ndc[2].x * 0.5f + 0.5f) * screen.Width, (-ndc[2].y * 0.5f + 0.5f) * screen.Height, ndc[2].z * 0.5f + 0.5f)
+                ClipToScreenPos(varyings[0].ClipPos),
+                ClipToScreenPos(varyings[1].ClipPos),
+                ClipToScreenPos(varyings[2].ClipPos)
             };
+
+            Vec3 normal = Vec3.Cross(screenPos[1] - screenPos[0], screenPos[2] - screenPos[0]).Normalize();
 
             int minX = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
             int maxX = Mathf.RoundToInt(Mathf.Min(screen.Width - 1, Mathf.Max(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
@@ -171,16 +169,29 @@ namespace VirtualGPU
                     float beta = SignedTriangleArea(p, screenPos[2], screenPos[0]) / area;
                     float gamma = SignedTriangleArea(p, screenPos[0], screenPos[1]) / area;
                     if (alpha < 0 || beta < 0 || gamma < 0) continue;
-                    Varyings v = new Varyings // TODO: Pass screen position instead of clip position
+
+                    float z = alpha * screenPos[0].z + beta * screenPos[1].z + gamma * screenPos[2].z;
+                    // TODO: Depth test
+
+                    FragmentData data = new FragmentData
                     {
-                        ClipPos = alpha * varyings[0].ClipPos + beta * varyings[1].ClipPos + gamma * varyings[2].ClipPos,
+                        ScreenPos = new Vec3(x, y, z),
                         UV = alpha * varyings[0].UV + beta * varyings[1].UV + gamma * varyings[2].UV,
-                        Normal = alpha * varyings[0].Normal + beta * varyings[1].Normal + gamma * varyings[2].Normal,
-                        Color = alpha * varyings[0].Color + beta * varyings[1].Color + gamma * varyings[2].Color
+                        Normal = normal,
+                        VertexColor = alpha * varyings[0].Color + beta * varyings[1].Color + gamma * varyings[2].Color
                     };
-                    SetPixel(x, y, shader.Fragment(v));
+
+                    framebuffer.WriteDepth(x, y, z);
+                    SetPixel(x, y, shader.Fragment(data));
                 }
             }
+        }
+
+        Vec3 ClipToScreenPos(Vec4 clipPos)
+        {
+            Vec3 ndcPos = clipPos / clipPos.w;
+            Vec3 screenPos = new Vec3((ndcPos.x * 0.5f + 0.5f) * screen.Width, (-ndcPos.y * 0.5f + 0.5f) * screen.Height, ndcPos.z * 0.5f + 0.5f);
+            return screenPos;
         }
 
         float SignedTriangleArea(Vec2 a, Vec2 b, Vec2 c)

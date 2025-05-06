@@ -8,6 +8,8 @@ namespace VirtualGPU
         public Vec3 Rotation { get; set; }
         public Vec3 Scale { get; set; }
 
+        public Vec3 Forward => Mat4.Rotate(Rotation) * new Vec3(0, 0, -1);
+
         public Transform()
         {
             Position = new Vec3(0, 0, 0);

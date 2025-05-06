@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace VirtualGPU
 {
-    public class Software : MonoBehaviour
+    public class Application : MonoBehaviour
     {
         public enum CameraType
         {
@@ -20,6 +20,7 @@ namespace VirtualGPU
         [SerializeField] Screen screen;
         [SerializeField] GPU gpu;
 
+        Shader litShader;
         Shader redShader;
         Shader vertexColorShader;
         Shader uvShader;
@@ -31,9 +32,13 @@ namespace VirtualGPU
         PerspectiveCamera perspectiveCamera;
         OrthographicCamera orthographicCamera;
 
+        Color ambientLight = new Color(0.1f, 0.1f, 0.1f, 1);
+        DirectionalLight directionalLight;
+
         IEnumerator RunProgram()
         {
-            redShader = new FlatColorShader(Color.red);
+            litShader = new LitShader();
+            redShader = new UnlitShader(Color.red);
             vertexColorShader = new VertexColorShader();
             uvShader = new UVShader();
 
@@ -59,24 +64,27 @@ namespace VirtualGPU
                     new Vertex(new Vec3(0.5f, -0.5f, -0.5f), new Vec2(1, 0)),
                     new Vertex(new Vec3(0f, 0.5f, 0f), new Vec2(0, 0)),
                 },
-                Indices = new int[] { 0, 1, 2, 0, 2, 3, 0, 4, 1, 1, 4, 2, 2, 4, 3, 3, 4, 0 }
+                Indices = new int[] { 0, 2, 1, 0, 3, 2, 0, 4, 1, 1, 4, 2, 2, 4, 3, 3, 4, 0 }
             };
 
             transform = new Transform();
             transform.Scale = new Vec3(scale, scale, 1);
 
             perspectiveCamera = new PerspectiveCamera(screen.Width, screen.Height);
-            perspectiveCamera.FieldOfView = 120.0f;
+            perspectiveCamera.FieldOfView = 90.0f;
             perspectiveCamera.Transform.Position = new Vec3(0, 0, 2.5f);
 
             orthographicCamera = new OrthographicCamera(screen.Width, screen.Height);
             orthographicCamera.Size = 2.0f;
             orthographicCamera.Transform.Position = new Vec3(0, 0, 2.5f);
 
+            directionalLight = new DirectionalLight(Color.white);
+            directionalLight.Transform.Rotation = new Vec3(0, 0, 0);
+
             while (true)
             {
                 OnUpdate();
-                RenderFrame();
+                OnRender();
                 yield return new WaitForEndOfFrame();
             }
         }
@@ -84,6 +92,8 @@ namespace VirtualGPU
         void OnUpdate()
         {
             transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
+            //directionalLight.Transform.Rotation += new Vec3(1, 0, 0) * Time.deltaTime;
+            //perspectiveCamera.Transform.Rotation += new Vec3(1, 0, 0) * Time.deltaTime;
 
             if (Input.GetKey(KeyCode.W))
             {
@@ -97,7 +107,7 @@ namespace VirtualGPU
             }
         }
 
-        void RenderFrame()
+        void OnRender()
         {
             gpu.Clear(Color.black);
 
@@ -116,8 +126,10 @@ namespace VirtualGPU
                 camera = orthographicCamera;
             }
 
-            Shader shader = vertexColorShader;
+            Shader shader = litShader;
             shader.Uniforms.MVPMatrix = camera.GetProjectionMatrix() * camera.GetViewMatrix() * transform.GetModelMatrix();
+            shader.Uniforms.AmbientLight = ambientLight;
+            shader.Uniforms.MainLight = directionalLight;
 
             if (wireframe)
                 gpu.DrawWireframe(shader);

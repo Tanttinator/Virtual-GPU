@@ -40,23 +40,25 @@ namespace VirtualGPU
             float cosZ = Mathf.Cos(rotation.z);
             float sinZ = Mathf.Sin(rotation.z);
 
-            // Rotation around X-axis
-            result.Elements[1, 1] = cosX;
-            result.Elements[1, 2] = -sinX;
+            result.Elements[0, 0] = cosZ * cosY - sinZ * sinX * sinY;
+            result.Elements[0, 1] = -sinZ * cosX;
+            result.Elements[0, 2] = cosZ * sinY + sinZ * sinX * cosY;
+            result.Elements[0, 3] = 0;
+
+            result.Elements[1, 0] = sinZ * cosY + cosZ * sinX * sinY;
+            result.Elements[1, 1] = cosZ * cosX;
+            result.Elements[1, 2] = sinZ * sinY - cosZ * sinX * cosY;
+            result.Elements[1, 3] = 0;
+
+            result.Elements[2, 0] = -cosX * sinY;
             result.Elements[2, 1] = sinX;
-            result.Elements[2, 2] = cosX;
+            result.Elements[2, 2] = cosX * cosY;
+            result.Elements[2, 3] = 0;
 
-            // Rotation around Y-axis
-            result.Elements[0, 0] = cosY;
-            result.Elements[0, 2] = sinY;
-            result.Elements[2, 0] = -sinY;
-            result.Elements[2, 2] = cosY;
-
-            // Rotation around Z-axis
-            result.Elements[0, 0] *= cosZ;
-            result.Elements[0, 1] *= -sinZ;
-            result.Elements[1, 0] *= sinZ;
-            result.Elements[1, 1] *= cosZ;
+            result.Elements[3, 0] = 0;
+            result.Elements[3, 1] = 0;
+            result.Elements[3, 2] = 0;
+            result.Elements[3, 3] = 1;
 
             return result;
         }
