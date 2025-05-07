@@ -17,9 +17,9 @@ namespace VirtualGPU
             return varyings;
         }
 
-        public virtual Color Fragment(FragmentData data)
+        public virtual Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
         {
-            return new Color(1, 1, 1, 1);
+            return Color.white;
         }
     }
 
@@ -53,14 +53,19 @@ namespace VirtualGPU
     {
         public Color Color = Color.white;
 
-        public override Color Fragment(FragmentData data)
+        public override Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
         {
+            Texture mainTex = textures[0];
+            Sampler mainTexSampler = samplers[0];
+
+            Color albedo = mainTexSampler.Sample(mainTex, data.UV) * Color;
+
             Vec3 normal = data.Normal;
             Vec3 lightDir = Uniforms.MainLight.GetLightDirection();
             float intensity = Mathf.Max(0, Vec3.Dot(normal, -lightDir));
 
             Color ambient = Uniforms.AmbientLight;
-            Color diffuse = Color * intensity;
+            Color diffuse = albedo * intensity;
             return ambient + diffuse;
         }
     }
@@ -74,7 +79,7 @@ namespace VirtualGPU
             this.color = color;
         }
 
-        public override Color Fragment(FragmentData data)
+        public override Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
         {
             return color;
         }
@@ -82,7 +87,7 @@ namespace VirtualGPU
 
     public class VertexColorShader : Shader
     {
-        public override Color Fragment(FragmentData data)
+        public override Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
         {
             return data.VertexColor;
         }
@@ -90,7 +95,7 @@ namespace VirtualGPU
 
     public class UVShader : Shader
     {
-        public override Color Fragment(FragmentData data)
+        public override Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
         {
             Vec2 uv = data.UV;
             return new Color(uv.x, uv.y, 0.0f, 1.0f);

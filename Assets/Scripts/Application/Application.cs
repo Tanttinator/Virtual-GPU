@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 
 namespace VirtualGPU
@@ -16,14 +17,22 @@ namespace VirtualGPU
         [SerializeField] float scale = 1.0f;
         [SerializeField] CameraType cameraType = CameraType.Perspective;
 
+        [Header("Textures")]
+        [SerializeField] Texture2D billCypherTextureInput;
+
         [Header("Resources")]
         [SerializeField] Screen screen;
         [SerializeField] GPU gpu;
+
+        [SerializeField] TMP_Text fpsText;
 
         Shader litShader;
         Shader redShader;
         Shader vertexColorShader;
         Shader uvShader;
+
+        Texture billCypherTexture;
+        Sampler billCypherSampler;
 
         Mesh quad;
         Mesh billCypher;
@@ -42,6 +51,10 @@ namespace VirtualGPU
             vertexColorShader = new VertexColorShader();
             uvShader = new UVShader();
 
+            billCypherTexture = new Texture(256, 256);
+            billCypherTexture.SetPixels(billCypherTextureInput.GetPixels());
+            billCypherSampler = new Sampler(Sampler.FilterMode.Point, Sampler.WrapMode.Repeat);
+
             quad = new Mesh()
             {
                 Vertices = new Vertex[]
@@ -58,13 +71,44 @@ namespace VirtualGPU
             {
                 Vertices = new Vertex[]
                 {
+                    new Vertex(new Vec3(0f, 0.5f, 0f), new Vec2(0.5f, 1f)), // Top
+
+                    // Front face
+                    new Vertex(new Vec3(-0.5f, -0.5f, 0.5f), new Vec2(0, 0)),
+                    new Vertex(new Vec3(0.5f, -0.5f, 0.5f), new Vec2(1, 0)),
+
+                    // Back face
+                    new Vertex(new Vec3(0.5f, -0.5f, -0.5f), new Vec2(0, 0)),
+                    new Vertex(new Vec3(-0.5f, -0.5f, -0.5f), new Vec2(1, 0)),
+
+                    // Left face
+                    new Vertex(new Vec3(-0.5f, -0.5f, -0.5f), new Vec2(0, 0)),
+                    new Vertex(new Vec3(-0.5f, -0.5f, 0.5f), new Vec2(1, 0)),
+
+                    // Right face
+                    new Vertex(new Vec3(0.5f, -0.5f, 0.5f), new Vec2(0, 0)),
+                    new Vertex(new Vec3(0.5f, -0.5f, -0.5f), new Vec2(1, 0)),
+
+                    // Bottom face
                     new Vertex(new Vec3(-0.5f, -0.5f, -0.5f), new Vec2(0, 0)),
                     new Vertex(new Vec3(-0.5f, -0.5f, 0.5f), new Vec2(0, 1)),
                     new Vertex(new Vec3(0.5f, -0.5f, 0.5f), new Vec2(1, 1)),
                     new Vertex(new Vec3(0.5f, -0.5f, -0.5f), new Vec2(1, 0)),
-                    new Vertex(new Vec3(0f, 0.5f, 0f), new Vec2(0, 0)),
                 },
-                Indices = new int[] { 0, 2, 1, 0, 3, 2, 0, 4, 1, 1, 4, 2, 2, 4, 3, 3, 4, 0 }
+                Indices = new int[]
+                {
+                    // Front face
+                    1, 0, 2,
+                    // Back face
+                    3, 0, 4,
+                    // Left face
+                    5, 0, 6,
+                    // Right face
+                    7, 0, 8,
+                    // Bottom face
+                    9, 10, 11,
+                    9, 11, 12,
+                }
             };
 
             transform = new Transform();
@@ -116,6 +160,8 @@ namespace VirtualGPU
                 perspectiveCamera.Transform.Rotation += new Vec3(0, -1f, 0) * Time.deltaTime;
                 orthographicCamera.Transform.Rotation += new Vec3(0, -1f, 0) * Time.deltaTime;
             }
+
+            fpsText.text = $"FPS: {1.0f / Time.deltaTime:F2}";
         }
 
         void OnRender()
@@ -143,6 +189,9 @@ namespace VirtualGPU
             shader.Uniforms.ProjectionMatrix = camera.GetProjectionMatrix();
             shader.Uniforms.AmbientLight = ambientLight;
             shader.Uniforms.MainLight = directionalLight;
+
+            gpu.BindTexture(0, billCypherTexture);
+            gpu.BindSampler(0, billCypherSampler);
 
             if (wireframe)
                 gpu.DrawWireframe(shader);

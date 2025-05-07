@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace VirtualGPU
@@ -8,6 +9,8 @@ namespace VirtualGPU
 
         Vertex[] vertexBuffer;
         int[] indexBuffer;
+        Texture[] textures = new Texture[8];
+        Sampler[] samplers = new Sampler[8];
         Framebuffer framebuffer;
 
         // INTERFACE
@@ -24,6 +27,18 @@ namespace VirtualGPU
         public void BindIndexBuffer(int[] indices)
         {
             indexBuffer = indices;
+        }
+
+        public void BindTexture(int slot, Texture texture)
+        {
+            if (slot < 0 || slot >= textures.Length) return;
+            textures[slot] = texture;
+        }
+
+        public void BindSampler(int slot, Sampler sampler)
+        {
+            if (slot < 0 || slot >= samplers.Length) return;
+            samplers[slot] = sampler;
         }
 
         public void Draw(Shader shader)
@@ -164,7 +179,7 @@ namespace VirtualGPU
             {
                 for (int y = minY; y <= maxY; y++)
                 {
-                    Vec2 p = new Vec2(x, y);
+                    Vec3 p = new Vec3(x, y, 0);
                     float alpha = SignedTriangleArea(p, screenPos[1], screenPos[2]) / area;
                     float beta = SignedTriangleArea(p, screenPos[2], screenPos[0]) / area;
                     float gamma = SignedTriangleArea(p, screenPos[0], screenPos[1]) / area;
@@ -181,8 +196,10 @@ namespace VirtualGPU
                         VertexColor = alpha * varyings[0].Color + beta * varyings[1].Color + gamma * varyings[2].Color
                     };
 
+                    Color color = shader.Fragment(data, textures, samplers);
+
                     framebuffer.WriteDepth(x, y, z);
-                    SetPixel(x, y, shader.Fragment(data));
+                    SetPixel(x, y, color);
                 }
             }
         }
@@ -194,14 +211,14 @@ namespace VirtualGPU
             return screenPos;
         }
 
-        float SignedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
+        float SignedTriangleArea(Vec3 a, Vec3 b, Vec3 c)
         {
-            return SignedTriangleArea(a.x, a.y, b.x, b.y, c.x, c.y);
+            return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2.0f;
         }
 
-        float SignedTriangleArea(float x0, float y0, float x1, float y1, float x2, float y2)
+        float SignedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
         {
-            return (x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1)) / 2.0f;
+            return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2.0f;
         }
 
         private void Awake()

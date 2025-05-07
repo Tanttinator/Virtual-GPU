@@ -19,7 +19,7 @@ namespace VirtualGPU
 
         public Vec3 GetLightDirection()
         {
-            return Transform.Forward.Normalize();
+            return Transform.Forward;
         }
     }
 }
