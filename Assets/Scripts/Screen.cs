@@ -11,7 +11,7 @@ namespace VirtualGPU
         [Header("References")]
         [SerializeField] UnityEngine.Transform displayObject;
 
-        Material displayMaterial;
+        UnityEngine.Material displayMaterial;
         Texture2D displayTexture;
 
         public void Draw(Color[] pixels)

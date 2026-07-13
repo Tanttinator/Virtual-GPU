@@ -13,7 +13,7 @@ namespace VirtualGPU
         }
 
         ApplicationSettings settings;
-        OpenGL openGl;
+        Engine engine;
 
         Shader litShader;
         Shader redShader;
@@ -23,22 +23,19 @@ namespace VirtualGPU
         Texture billCypherTexture;
         Sampler billCypherSampler;
 
-        Mesh quad;
-        Mesh billCypher;
-        Transform transform;
+        Scene scene;
+
+        GameObject billCypher;
 
         PerspectiveCamera perspectiveCamera;
         OrthographicCamera orthographicCamera;
 
-        Color ambientLight = new Color(0.1f, 0.1f, 0.1f, 1);
-        DirectionalLight directionalLight;
-
         public float FPS { get; private set; } = 0f;
 
-        public Application(ApplicationSettings settings, OpenGL openGl)
+        public Application(ApplicationSettings settings, Engine engine)
         {
             this.settings = settings;
-            this.openGl = openGl;
+            this.engine = engine;
         }
 
         public IEnumerator RunProgram()
@@ -48,23 +45,14 @@ namespace VirtualGPU
             vertexColorShader = new VertexColorShader();
             uvShader = new UVShader();
 
-            billCypherTexture = new Texture(256, 256);
-            billCypherTexture.SetPixels(settings.BillCypher.GetPixels());
-            billCypherSampler = new Sampler(Sampler.FilterMode.Point, Sampler.WrapMode.Repeat);
+            scene = new Scene();
 
-            quad = new Mesh()
-            {
-                Vertices = new Vertex[]
-                {
-                    new Vertex(new Vec3(-0.5f, -0.5f, 0), new Vec2(0, 0), new Color(1, 1, 1, 1)),
-                    new Vertex(new Vec3(-0.5f, 0.5f, 0), new Vec2(0, 1), new Color(1, 0, 0, 1)),
-                    new Vertex(new Vec3(0.5f, 0.5f, 0), new Vec2(1, 1), new Color(0, 1, 0, 1)),
-                    new Vertex(new Vec3(0.5f, -0.5f, 0), new Vec2(1, 0), new Color(0, 0, 1, 1))
-                },
-                Indices = new int[] { 0, 1, 2, 0, 2, 3 }
-            };
+            billCypher = new GameObject();
 
-            billCypher = new Mesh()
+            billCypher.Transform.Rotation = new Vec3(0, Mathf.PI / 4, 0);
+            billCypher.Transform.Scale = new Vec3(settings.Scale, settings.Scale, 1);
+
+            billCypher.Mesh = new Mesh()
             {
                 Vertices = new Vertex[]
                 {
@@ -108,9 +96,21 @@ namespace VirtualGPU
                 }
             };
 
-            transform = new Transform();
-            transform.Rotation = new Vec3(0, Mathf.PI / 4, 0);
-            transform.Scale = new Vec3(settings.Scale, settings.Scale, 1);
+            billCypherTexture = new Texture(256, 256);
+            billCypherTexture.SetPixels(settings.BillCypher.GetPixels());
+            billCypherSampler = new Sampler(Sampler.FilterMode.Point, Sampler.WrapMode.Repeat);
+
+            billCypher.Material = new Material()
+            {
+                Shader = litShader,
+                Texture = billCypherTexture,
+                Sampler = billCypherSampler
+            };
+
+            scene.GameObjects = new GameObject[]
+            {
+                billCypher
+            };
 
             perspectiveCamera = new PerspectiveCamera(16f / 9f);
             perspectiveCamera.FieldOfView = 90.0f;
@@ -120,8 +120,12 @@ namespace VirtualGPU
             orthographicCamera.Size = 2.0f;
             orthographicCamera.Transform.Position = new Vec3(0, 0, 2.5f);
 
-            directionalLight = new DirectionalLight(Color.white);
-            directionalLight.Transform.Rotation = new Vec3(0, Mathf.PI, 0);
+            scene.Camera = perspectiveCamera;
+
+            scene.MainLight = new DirectionalLight(Color.white);
+            scene.MainLight.Transform.Rotation = new Vec3(0, Mathf.PI, 0);
+
+            scene.AmbientLight = new Color(0.1f, 0.1f, 0.1f, 1);
 
             while (true)
             {
@@ -133,7 +137,7 @@ namespace VirtualGPU
 
         void OnUpdate()
         {
-            transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
+            billCypher.Transform.Rotation += new Vec3(0, 1f, 0) * Time.deltaTime;
             //directionalLight.Transform.Rotation += new Vec3(0, 1, 0) * Time.deltaTime;
             //perspectiveCamera.Transform.Rotation += new Vec3(1, 0, 0) * Time.deltaTime;
 
@@ -158,45 +162,17 @@ namespace VirtualGPU
                 orthographicCamera.Transform.Rotation += new Vec3(0, -1f, 0) * Time.deltaTime;
             }
 
+            if (settings.CameraType == CameraType.Perspective)
+                scene.Camera = perspectiveCamera;
+            else
+                scene.Camera = orthographicCamera;
+
             FPS = 1f / Time.deltaTime;
         }
 
         void OnRender()
         {
-            openGl.ClearColor(Color.black);
-            openGl.Clear();
-
-            Mesh mesh = billCypher;
-
-            openGl.BindVertexBuffer(mesh.Vertices);
-            openGl.BindIndexBuffer(mesh.Indices);
-
-            Camera camera = null;
-            if (settings.CameraType == CameraType.Perspective)
-            {
-                camera = perspectiveCamera;
-            }
-            else if (settings.CameraType == CameraType.Orthographic)
-            {
-                camera = orthographicCamera;
-            }
-
-            Shader shader = litShader;
-            shader.Uniforms.ModelMatrix = transform.GetModelMatrix();
-            shader.Uniforms.ViewMatrix = camera.GetViewMatrix();
-            shader.Uniforms.ProjectionMatrix = camera.GetProjectionMatrix();
-            shader.Uniforms.AmbientLight = ambientLight;
-            shader.Uniforms.MainLight = directionalLight;
-
-            openGl.BindTexture(0, billCypherTexture);
-            openGl.BindSampler(0, billCypherSampler);
-
-            if (settings.Wireframe)
-                openGl.DrawWireframe(shader);
-            else
-                openGl.Draw(shader);
-
-            openGl.SwapBuffers();
+            engine.RenderScene(scene);
         }
     }
 

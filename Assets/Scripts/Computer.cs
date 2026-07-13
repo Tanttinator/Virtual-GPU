@@ -11,13 +11,15 @@ namespace VirtualGPU
 
         GPU gpu;
         OpenGL openGl;
+        Engine engine;
         Application app;
 
         void Start()
         {
             gpu = new GPU(screen);
             openGl = new OpenGL(gpu);
-            app = new Application(applicationSettings, openGl);
+            engine = new Engine(openGl);
+            app = new Application(applicationSettings, engine);
 
             StartCoroutine(app.RunProgram());
         }

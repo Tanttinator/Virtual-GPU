@@ -7,6 +7,7 @@ namespace VirtualGPU
         public Transform Transform { get; private set; } = new Transform();
         public float NearPlane { get; set; } = 0.1f;
         public float FarPlane { get; set; } = 100.0f;
+        public Color ClearColor { get; set; } = Color.black;
 
         protected float aspectRatio;
 
