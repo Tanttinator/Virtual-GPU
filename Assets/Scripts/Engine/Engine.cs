@@ -5,10 +5,18 @@ namespace VirtualGPU
     public class Engine
     {
         OpenGL openGl;
+        Window window;
 
         public Engine(OpenGL openGl)
         {
             this.openGl = openGl;
+        }
+
+        public void Setup(int screenWidth, int screenHeight)
+        {
+            window = openGl.CreateWindow(screenWidth, screenHeight);
+            openGl.MakeContextCurrent(window);
+            openGl.Viewport(0, 0, screenWidth, screenHeight);
         }
 
         public void RenderScene(Scene scene)

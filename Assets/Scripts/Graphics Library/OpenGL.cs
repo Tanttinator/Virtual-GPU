@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace VirtualGPU
@@ -6,11 +7,36 @@ namespace VirtualGPU
     {
         GPU gpu;
 
+        Window currentWindow;
+        (int startX, int startY, int width, int height) viewport;
         Color clearColor;
+        Vertex[] vertexBuffer;
+        int[] indexBuffer;
 
         public OpenGL(GPU gpu)
         {
             this.gpu = gpu;
+        }
+
+        public Window CreateWindow(int width, int height)
+        {
+            Window window = new Window()
+            {
+                Width = width,
+                Height = height
+            };
+
+            return window;
+        }
+
+        public void MakeContextCurrent(Window window)
+        {
+            currentWindow = window;
+        }
+
+        public void Viewport(int startX, int startY, int width, int height)
+        {
+            viewport = (startX, startY, width, height);
         }
 
         public void ClearColor(Color color)
@@ -25,12 +51,12 @@ namespace VirtualGPU
 
         public void BindVertexBuffer(Vertex[] buffer)
         {
-            gpu.BindVertexBuffer(buffer);
+            vertexBuffer = buffer;
         }
 
         public void BindIndexBuffer(int[] buffer)
         {
-            gpu.BindIndexBuffer(buffer);
+            indexBuffer = buffer;
         }
 
         public void BindTexture(int id, Texture texture)
@@ -45,17 +71,19 @@ namespace VirtualGPU
 
         public void Draw(Shader shader)
         {
-            gpu.Draw(shader);
-        }
-
-        public void DrawWireframe(Shader shader)
-        {
-            gpu.DrawWireframe(shader);
+            gpu.Draw(vertexBuffer, indexBuffer, shader);
         }
 
         public void SwapBuffers()
         {
             gpu.Present();
         }
+    }
+
+    public class Window
+    {
+        public int Width;
+        public int Height;
+        public (int x, int y) Position = (0, 0);
     }
 }

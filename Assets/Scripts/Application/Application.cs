@@ -40,6 +40,8 @@ namespace VirtualGPU
 
         public IEnumerator RunProgram()
         {
+            engine.Setup(1920, 1080);
+
             litShader = new LitShader();
             redShader = new UnlitShader(Color.red);
             vertexColorShader = new VertexColorShader();

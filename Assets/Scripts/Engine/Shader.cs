@@ -17,7 +17,7 @@ namespace VirtualGPU
             return varyings;
         }
 
-        public virtual Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
+        public virtual Color Fragment(FragmentInput input, Texture[] textures, Sampler[] samplers)
         {
             return Color.white;
         }
@@ -32,7 +32,7 @@ namespace VirtualGPU
         public Color Color;
     }
 
-    public class FragmentData
+    public class FragmentInput
     {
         public Vec3 ScreenPos;
         public Vec2 UV;
@@ -53,14 +53,14 @@ namespace VirtualGPU
     {
         public Color Color = Color.white;
 
-        public override Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
+        public override Color Fragment(FragmentInput input, Texture[] textures, Sampler[] samplers)
         {
             Texture mainTex = textures[0];
             Sampler mainTexSampler = samplers[0];
 
-            Color albedo = mainTexSampler.Sample(mainTex, data.UV) * Color;
+            Color albedo = mainTexSampler.Sample(mainTex, input.UV) * Color;
 
-            Vec3 normal = data.Normal;
+            Vec3 normal = input.Normal;
             Vec3 lightDir = Uniforms.MainLight.GetLightDirection();
             float intensity = Mathf.Max(0, Vec3.Dot(normal, -lightDir));
 
@@ -79,7 +79,7 @@ namespace VirtualGPU
             this.color = color;
         }
 
-        public override Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
+        public override Color Fragment(FragmentInput input, Texture[] textures, Sampler[] samplers)
         {
             return color;
         }
@@ -87,17 +87,17 @@ namespace VirtualGPU
 
     public class VertexColorShader : Shader
     {
-        public override Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
+        public override Color Fragment(FragmentInput input, Texture[] textures, Sampler[] samplers)
         {
-            return data.VertexColor;
+            return input.VertexColor;
         }
     }
 
     public class UVShader : Shader
     {
-        public override Color Fragment(FragmentData data, Texture[] textures, Sampler[] samplers)
+        public override Color Fragment(FragmentInput input, Texture[] textures, Sampler[] samplers)
         {
-            Vec2 uv = data.UV;
+            Vec2 uv = input.UV;
             return new Color(uv.x, uv.y, 0.0f, 1.0f);
         }
     }

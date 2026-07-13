@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace VirtualGPU
@@ -5,8 +6,6 @@ namespace VirtualGPU
     public class GPU
     {
         Screen screen;
-        Vertex[] vertexBuffer;
-        int[] indexBuffer;
         Texture[] textures = new Texture[8];
         Sampler[] samplers = new Sampler[8];
         Framebuffer framebuffer;
@@ -23,16 +22,6 @@ namespace VirtualGPU
             framebuffer.Clear(color);
         }
 
-        public void BindVertexBuffer(Vertex[] vertices)
-        {
-            vertexBuffer = vertices;
-        }
-
-        public void BindIndexBuffer(int[] indices)
-        {
-            indexBuffer = indices;
-        }
-
         public void BindTexture(int slot, Texture texture)
         {
             if (slot < 0 || slot >= textures.Length) return;
@@ -45,41 +34,153 @@ namespace VirtualGPU
             samplers[slot] = sampler;
         }
 
-        public void Draw(Shader shader)
+        public void Draw(Vertex[] vertexBuffer, int[] indexBuffer, Shader shader)
         {
-            for (int i = 0; i < indexBuffer.Length; i += 3)
+            Vertex[] vertices = InputAssembler(vertexBuffer);
+            Varyings[] varyings = VertexShader(vertices, shader);
+            Triangle[] primitives = PrimitiveAssembler(varyings, indexBuffer);
+
+            foreach (Triangle triangle in primitives)
             {
-                int index0 = indexBuffer[i];
-                int index1 = indexBuffer[i + 1];
-                int index2 = indexBuffer[i + 2];
+                if (Clipping(triangle)) continue;
 
-                Vertex v0 = vertexBuffer[index0];
-                Vertex v1 = vertexBuffer[index1];
-                Vertex v2 = vertexBuffer[index2];
+                Vec3[] worldPos = new Vec3[]
+                {
+                    ClipToScreenPos(triangle.Vertex0.ClipPos),
+                    ClipToScreenPos(triangle.Vertex1.ClipPos),
+                    ClipToScreenPos(triangle.Vertex2.ClipPos)
+                };
 
-                DrawTriangle(v0, v1, v2, shader);
-            }
-        }
-
-        public void DrawWireframe(Shader shader)
-        {
-            for (int i = 0; i < indexBuffer.Length; i += 3)
-            {
-                int index0 = indexBuffer[i];
-                int index1 = indexBuffer[i + 1];
-                int index2 = indexBuffer[i + 2];
-
-                Vertex v0 = vertexBuffer[index0];
-                Vertex v1 = vertexBuffer[index1];
-                Vertex v2 = vertexBuffer[index2];
-
-                DrawWireframeTriangle(v0, v1, v2, shader, Color.white);
+                List<FragmentInput> fragmentInputs = Rasterizer(triangle, worldPos);
+                List<FragmentInput> passed = DepthTest(fragmentInputs);
+                Fragment[] fragments = FragmentShader(passed, shader);
+                Blending(fragments);
             }
         }
 
         public void Present()
         {
             screen.Draw(framebuffer.ColorBuffer);
+        }
+
+        // PIPELINE STAGES
+        Vertex[] InputAssembler(Vertex[] vertexBuffer)
+        {
+            return vertexBuffer;
+        }
+
+        Varyings[] VertexShader(Vertex[] vertices, Shader shader)
+        {
+            Varyings[] varyings = new Varyings[vertices.Length];
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                varyings[i] = shader.Vertex(vertices[i]);
+            }
+            return varyings;
+        }
+
+        Triangle[] PrimitiveAssembler(Varyings[] varyings, int[] indexBuffer)
+        {
+            int triangleCount = indexBuffer.Length / 3;
+            Triangle[] triangles = new Triangle[triangleCount];
+            for (int i = 0; i < triangleCount; i++)
+            {
+                int index0 = indexBuffer[i * 3];
+                int index1 = indexBuffer[i * 3 + 1];
+                int index2 = indexBuffer[i * 3 + 2];
+
+                Triangle triangle = new Triangle()
+                {
+                    Vertex0 = varyings[index0],
+                    Vertex1 = varyings[index1],
+                    Vertex2 = varyings[index2]
+                };
+
+                triangles[i] = triangle;
+            }
+            return triangles;
+        }
+
+        bool Clipping(Triangle triangle)
+        {
+            return triangle.Vertex0.ClipPos.w <= 0 && triangle.Vertex1.ClipPos.w <= 0 && triangle.Vertex2.ClipPos.w <= 0;
+        }
+
+        List<FragmentInput> Rasterizer(Triangle triangle, Vec3[] screenPos)
+        {
+            List<FragmentInput> fragments = new List<FragmentInput>();
+
+            Vec3 normal = Vec3.Cross(triangle.Vertex1.WorldPos - triangle.Vertex0.WorldPos, triangle.Vertex2.WorldPos - triangle.Vertex0.WorldPos).Normalize();
+
+            int minX = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
+            int maxX = Mathf.RoundToInt(Mathf.Min(screen.Width - 1, Mathf.Max(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
+            int minY = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].y, screenPos[1].y, screenPos[2].y)));
+            int maxY = Mathf.RoundToInt(Mathf.Min(screen.Height - 1, Mathf.Max(screenPos[0].y, screenPos[1].y, screenPos[2].y)));
+
+            float area = SignedTriangleArea(screenPos[0], screenPos[1], screenPos[2]);
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    Vec3 p = new Vec3(x, y, 0);
+                    float alpha = SignedTriangleArea(p, screenPos[1], screenPos[2]) / area;
+                    float beta = SignedTriangleArea(p, screenPos[2], screenPos[0]) / area;
+                    float gamma = SignedTriangleArea(p, screenPos[0], screenPos[1]) / area;
+                    if (alpha < 0 || beta < 0 || gamma < 0) continue;
+
+                    float z = alpha * screenPos[0].z + beta * screenPos[1].z + gamma * screenPos[2].z;
+                    FragmentInput data = new FragmentInput
+                    {
+                        ScreenPos = new Vec3(x, y, z),
+                        UV = alpha * triangle.Vertex0.UV + beta * triangle.Vertex1.UV + gamma * triangle.Vertex2.UV,
+                        Normal = normal,
+                        VertexColor = alpha * triangle.Vertex0.Color + beta * triangle.Vertex1.Color + gamma * triangle.Vertex2.Color
+                    };
+                    fragments.Add(data);
+                }
+            }
+
+            return fragments;
+        }
+
+        List<FragmentInput> DepthTest(List<FragmentInput> fragments)
+        {
+            List<FragmentInput> filtered = new List<FragmentInput>();
+            foreach (FragmentInput fragment in fragments)
+            {
+                Vec3 position = fragment.ScreenPos;
+                if (framebuffer.ReadDepth((int)position.x, (int)position.y) > position.z)
+                    filtered.Add(fragment);
+            }
+            return filtered;
+        }
+
+        Fragment[] FragmentShader(List<FragmentInput> inputs, Shader shader)
+        {
+            Fragment[] fragments = new Fragment[inputs.Count];
+            for (int i = 0; i < inputs.Count; i++)
+            {
+                FragmentInput input = inputs[i];
+                Fragment fragment = new Fragment()
+                {
+                    ScreenX = (int)input.ScreenPos.x,
+                    ScreenY = (int)input.ScreenPos.y,
+                    Color = shader.Fragment(input, textures, samplers),
+                    Depth = input.ScreenPos.z
+                };
+                fragments[i] = fragment;
+            }
+            return fragments;
+        }
+
+        void Blending(Fragment[] fragments)
+        {
+            foreach (Fragment fragment in fragments)
+            {
+                framebuffer.WriteDepth(fragment.ScreenX, fragment.ScreenY, fragment.Depth);
+                framebuffer.WriteColor(fragment.ScreenX, fragment.ScreenY, fragment.Color);
+            }
         }
 
         // INTERNAL
@@ -116,98 +217,6 @@ namespace VirtualGPU
             }
         }
 
-        void DrawWireframeTriangle(Vertex v0, Vertex v1, Vertex v2, Shader shader, Color color)
-        {
-            Varyings[] varyings = new Varyings[]
-            {
-                shader.Vertex(v0),
-                shader.Vertex(v1),
-                shader.Vertex(v2)
-            };
-
-            Vec3[] ndc = new Vec3[]
-            {
-                varyings[0].ClipPos / varyings[0].ClipPos.w,
-                varyings[1].ClipPos / varyings[1].ClipPos.w,
-                varyings[2].ClipPos / varyings[2].ClipPos.w
-            };
-
-            Vec3[] screenPos = new Vec3[]
-            {
-                new Vec3((ndc[0].x * 0.5f + 0.5f) * screen.Width, (-ndc[0].y * 0.5f + 0.5f) * screen.Height, ndc[0].z * 0.5f + 0.5f),
-                new Vec3((ndc[1].x * 0.5f + 0.5f) * screen.Width, (-ndc[1].y * 0.5f + 0.5f) * screen.Height, ndc[1].z * 0.5f + 0.5f),
-                new Vec3((ndc[2].x * 0.5f + 0.5f) * screen.Width, (-ndc[2].y * 0.5f + 0.5f) * screen.Height, ndc[2].z * 0.5f + 0.5f)
-            };
-
-            int x0 = Mathf.RoundToInt(screenPos[0].x);
-            int y0 = Mathf.RoundToInt(screenPos[0].y);
-            int x1 = Mathf.RoundToInt(screenPos[1].x);
-            int y1 = Mathf.RoundToInt(screenPos[1].y);
-            int x2 = Mathf.RoundToInt(screenPos[2].x);
-            int y2 = Mathf.RoundToInt(screenPos[2].y);
-
-            DrawLine(x0, y0, x1, y1, color);
-            DrawLine(x1, y1, x2, y2, color);
-            DrawLine(x2, y2, x0, y0, color);
-        }
-
-        void DrawTriangle(Vertex v0, Vertex v1, Vertex v2, Shader shader)
-        {
-            Varyings[] varyings = new Varyings[]
-            {
-                shader.Vertex(v0),
-                shader.Vertex(v1),
-                shader.Vertex(v2)
-            };
-
-            bool behind = varyings[0].ClipPos.w <= 0 && varyings[1].ClipPos.w <= 0 && varyings[2].ClipPos.w <= 0;
-            if (behind) return;
-
-            Vec3[] screenPos = new Vec3[]
-            {
-                ClipToScreenPos(varyings[0].ClipPos),
-                ClipToScreenPos(varyings[1].ClipPos),
-                ClipToScreenPos(varyings[2].ClipPos)
-            };
-
-            Vec3 normal = Vec3.Cross(varyings[1].WorldPos - varyings[0].WorldPos, varyings[2].WorldPos - varyings[0].WorldPos).Normalize();
-
-            int minX = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
-            int maxX = Mathf.RoundToInt(Mathf.Min(screen.Width - 1, Mathf.Max(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
-            int minY = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].y, screenPos[1].y, screenPos[2].y)));
-            int maxY = Mathf.RoundToInt(Mathf.Min(screen.Height - 1, Mathf.Max(screenPos[0].y, screenPos[1].y, screenPos[2].y)));
-
-            float area = SignedTriangleArea(screenPos[0], screenPos[1], screenPos[2]);
-
-            for (int x = minX; x <= maxX; x++)
-            {
-                for (int y = minY; y <= maxY; y++)
-                {
-                    Vec3 p = new Vec3(x, y, 0);
-                    float alpha = SignedTriangleArea(p, screenPos[1], screenPos[2]) / area;
-                    float beta = SignedTriangleArea(p, screenPos[2], screenPos[0]) / area;
-                    float gamma = SignedTriangleArea(p, screenPos[0], screenPos[1]) / area;
-                    if (alpha < 0 || beta < 0 || gamma < 0) continue;
-
-                    float z = alpha * screenPos[0].z + beta * screenPos[1].z + gamma * screenPos[2].z;
-                    if (framebuffer.ReadDepth(x, y) < z) continue;
-
-                    FragmentData data = new FragmentData
-                    {
-                        ScreenPos = new Vec3(x, y, z),
-                        UV = alpha * varyings[0].UV + beta * varyings[1].UV + gamma * varyings[2].UV,
-                        Normal = normal,
-                        VertexColor = alpha * varyings[0].Color + beta * varyings[1].Color + gamma * varyings[2].Color
-                    };
-
-                    Color color = shader.Fragment(data, textures, samplers);
-
-                    framebuffer.WriteDepth(x, y, z);
-                    SetPixel(x, y, color);
-                }
-            }
-        }
-
         Vec3 ClipToScreenPos(Vec4 clipPos)
         {
             Vec3 ndcPos = clipPos / clipPos.w;
@@ -218,6 +227,21 @@ namespace VirtualGPU
         float SignedTriangleArea(Vec3 a, Vec3 b, Vec3 c)
         {
             return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2.0f;
+        }
+
+        struct Triangle
+        {
+            public Varyings Vertex0;
+            public Varyings Vertex1;
+            public Varyings Vertex2;
+        }
+
+        struct Fragment
+        {
+            public int ScreenX;
+            public int ScreenY;
+            public Color Color;
+            public float Depth;
         }
     }
 }
