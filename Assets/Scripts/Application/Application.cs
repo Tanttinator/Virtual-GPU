@@ -1,10 +1,10 @@
+using System;
 using System.Collections;
-using TMPro;
 using UnityEngine;
 
 namespace VirtualGPU
 {
-    public class Application : MonoBehaviour
+    public class Application
     {
         public enum CameraType
         {
@@ -12,19 +12,8 @@ namespace VirtualGPU
             Orthographic
         }
 
-        [Header("Program Parameters")]
-        [SerializeField] bool wireframe = false;
-        [SerializeField] float scale = 1.0f;
-        [SerializeField] CameraType cameraType = CameraType.Perspective;
-
-        [Header("Textures")]
-        [SerializeField] Texture2D billCypherTextureInput;
-
-        [Header("Resources")]
-        [SerializeField] Screen screen;
-        [SerializeField] GPU gpu;
-
-        [SerializeField] TMP_Text fpsText;
+        ApplicationSettings settings;
+        OpenGL openGl;
 
         Shader litShader;
         Shader redShader;
@@ -36,7 +25,7 @@ namespace VirtualGPU
 
         Mesh quad;
         Mesh billCypher;
-        new Transform transform;
+        Transform transform;
 
         PerspectiveCamera perspectiveCamera;
         OrthographicCamera orthographicCamera;
@@ -44,7 +33,15 @@ namespace VirtualGPU
         Color ambientLight = new Color(0.1f, 0.1f, 0.1f, 1);
         DirectionalLight directionalLight;
 
-        IEnumerator RunProgram()
+        public float FPS { get; private set; } = 0f;
+
+        public Application(ApplicationSettings settings, OpenGL openGl)
+        {
+            this.settings = settings;
+            this.openGl = openGl;
+        }
+
+        public IEnumerator RunProgram()
         {
             litShader = new LitShader();
             redShader = new UnlitShader(Color.red);
@@ -52,7 +49,7 @@ namespace VirtualGPU
             uvShader = new UVShader();
 
             billCypherTexture = new Texture(256, 256);
-            billCypherTexture.SetPixels(billCypherTextureInput.GetPixels());
+            billCypherTexture.SetPixels(settings.BillCypher.GetPixels());
             billCypherSampler = new Sampler(Sampler.FilterMode.Point, Sampler.WrapMode.Repeat);
 
             quad = new Mesh()
@@ -113,13 +110,13 @@ namespace VirtualGPU
 
             transform = new Transform();
             transform.Rotation = new Vec3(0, Mathf.PI / 4, 0);
-            transform.Scale = new Vec3(scale, scale, 1);
+            transform.Scale = new Vec3(settings.Scale, settings.Scale, 1);
 
-            perspectiveCamera = new PerspectiveCamera(screen.Width, screen.Height);
+            perspectiveCamera = new PerspectiveCamera(16f / 9f);
             perspectiveCamera.FieldOfView = 90.0f;
             perspectiveCamera.Transform.Position = new Vec3(0, 0, 2.5f);
 
-            orthographicCamera = new OrthographicCamera(screen.Width, screen.Height);
+            orthographicCamera = new OrthographicCamera(16f / 9f);
             orthographicCamera.Size = 2.0f;
             orthographicCamera.Transform.Position = new Vec3(0, 0, 2.5f);
 
@@ -161,24 +158,25 @@ namespace VirtualGPU
                 orthographicCamera.Transform.Rotation += new Vec3(0, -1f, 0) * Time.deltaTime;
             }
 
-            fpsText.text = $"FPS: {1.0f / Time.deltaTime:F2}";
+            FPS = 1f / Time.deltaTime;
         }
 
         void OnRender()
         {
-            gpu.Clear(Color.black);
+            openGl.ClearColor(Color.black);
+            openGl.Clear();
 
             Mesh mesh = billCypher;
 
-            gpu.BindVertexBuffer(mesh.Vertices);
-            gpu.BindIndexBuffer(mesh.Indices);
+            openGl.BindVertexBuffer(mesh.Vertices);
+            openGl.BindIndexBuffer(mesh.Indices);
 
             Camera camera = null;
-            if (cameraType == CameraType.Perspective)
+            if (settings.CameraType == CameraType.Perspective)
             {
                 camera = perspectiveCamera;
             }
-            else if (cameraType == CameraType.Orthographic)
+            else if (settings.CameraType == CameraType.Orthographic)
             {
                 camera = orthographicCamera;
             }
@@ -190,20 +188,25 @@ namespace VirtualGPU
             shader.Uniforms.AmbientLight = ambientLight;
             shader.Uniforms.MainLight = directionalLight;
 
-            gpu.BindTexture(0, billCypherTexture);
-            gpu.BindSampler(0, billCypherSampler);
+            openGl.BindTexture(0, billCypherTexture);
+            openGl.BindSampler(0, billCypherSampler);
 
-            if (wireframe)
-                gpu.DrawWireframe(shader);
+            if (settings.Wireframe)
+                openGl.DrawWireframe(shader);
             else
-                gpu.Draw(shader);
+                openGl.Draw(shader);
 
-            gpu.Present();
+            openGl.SwapBuffers();
         }
+    }
 
-        private void Start()
-        {
-            StartCoroutine(RunProgram());
-        }
+    [Serializable]
+    public class ApplicationSettings
+    {
+        public bool Wireframe = false;
+        public float Scale = 1f;
+        public Application.CameraType CameraType;
+
+        public Texture2D BillCypher;
     }
 }

@@ -1,17 +1,21 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace VirtualGPU
 {
-    public class GPU : MonoBehaviour
+    public class GPU
     {
-        [SerializeField] Screen screen;
-
+        Screen screen;
         Vertex[] vertexBuffer;
         int[] indexBuffer;
         Texture[] textures = new Texture[8];
         Sampler[] samplers = new Sampler[8];
         Framebuffer framebuffer;
+
+        public GPU(Screen screen)
+        {
+            this.screen = screen;
+            framebuffer = new Framebuffer(screen.Width, screen.Height);
+        }
 
         // INTERFACE
         public void Clear(Color color)
@@ -214,16 +218,6 @@ namespace VirtualGPU
         float SignedTriangleArea(Vec3 a, Vec3 b, Vec3 c)
         {
             return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2.0f;
-        }
-
-        float SignedTriangleArea(Vec2 a, Vec2 b, Vec2 c)
-        {
-            return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2.0f;
-        }
-
-        private void Awake()
-        {
-            framebuffer = new Framebuffer(screen.Width, screen.Height);
         }
     }
 }

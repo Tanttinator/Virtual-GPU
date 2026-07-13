@@ -10,9 +10,9 @@ namespace VirtualGPU
 
         protected float aspectRatio;
 
-        public Camera(int screenWidth, int screenHeight)
+        public Camera(float aspectRatio)
         {
-            aspectRatio = (float)screenWidth / (float)screenHeight;
+            this.aspectRatio = aspectRatio;
         }
 
         public Mat4 GetViewMatrix()
@@ -30,7 +30,7 @@ namespace VirtualGPU
     {
         public float FieldOfView { get; set; } = 45.0f;
 
-        public PerspectiveCamera(int screenWidth, int screenHeight) : base(screenWidth, screenHeight)
+        public PerspectiveCamera(float aspectRatio) : base(aspectRatio)
         {
 
         }
@@ -55,7 +55,7 @@ namespace VirtualGPU
     {
         public float Size { get; set; } = 1.0f;
 
-        public OrthographicCamera(int screenWidth, int screenHeight) : base(screenWidth, screenHeight)
+        public OrthographicCamera(float aspectRatio) : base(aspectRatio)
         {
 
         }
