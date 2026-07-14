@@ -23,7 +23,7 @@ namespace VirtualGPU
         }
     }
 
-    public class Varyings
+    public struct Varyings
     {
         public Vec3 WorldPos;
         public Vec4 ClipPos;
@@ -32,7 +32,7 @@ namespace VirtualGPU
         public Color Color;
     }
 
-    public class FragmentInput
+    public struct FragmentInput
     {
         public Vec3 ScreenPos;
         public Vec2 UV;

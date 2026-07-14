@@ -10,6 +10,8 @@ namespace VirtualGPU
         Sampler[] samplers = new Sampler[8];
         Framebuffer framebuffer;
 
+        List<FragmentInput> fragmentsCache = new List<FragmentInput>();
+
         public GPU(Screen screen)
         {
             this.screen = screen;
@@ -51,10 +53,12 @@ namespace VirtualGPU
                     ClipToScreenPos(triangle.Vertex2.ClipPos)
                 };
 
-                List<FragmentInput> fragmentInputs = Rasterizer(triangle, worldPos);
-                List<FragmentInput> passed = DepthTest(fragmentInputs);
-                Fragment[] fragments = FragmentShader(passed, shader);
+                fragmentsCache.Capacity = 10000;
+                Rasterizer(triangle, worldPos, fragmentsCache);
+                //DepthTest(fragmentsCache);
+                Fragment[] fragments = FragmentShader(fragmentsCache, shader);
                 Blending(fragments);
+                fragmentsCache.Clear();
             }
         }
 
@@ -106,16 +110,14 @@ namespace VirtualGPU
             return triangle.Vertex0.ClipPos.w <= 0 && triangle.Vertex1.ClipPos.w <= 0 && triangle.Vertex2.ClipPos.w <= 0;
         }
 
-        List<FragmentInput> Rasterizer(Triangle triangle, Vec3[] screenPos)
+        void Rasterizer(Triangle triangle, Vec3[] screenPos, List<FragmentInput> fragments)
         {
-            List<FragmentInput> fragments = new List<FragmentInput>();
-
             Vec3 normal = Vec3.Cross(triangle.Vertex1.WorldPos - triangle.Vertex0.WorldPos, triangle.Vertex2.WorldPos - triangle.Vertex0.WorldPos).Normalize();
 
-            int minX = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
-            int maxX = Mathf.RoundToInt(Mathf.Min(screen.Width - 1, Mathf.Max(screenPos[0].x, screenPos[1].x, screenPos[2].x)));
-            int minY = Mathf.RoundToInt(Mathf.Max(0f, Mathf.Min(screenPos[0].y, screenPos[1].y, screenPos[2].y)));
-            int maxY = Mathf.RoundToInt(Mathf.Min(screen.Height - 1, Mathf.Max(screenPos[0].y, screenPos[1].y, screenPos[2].y)));
+            int minX = (int)Mathf.Max(0f, Mathf.Min(screenPos[0].x, screenPos[1].x, screenPos[2].x));
+            int maxX = (int)Mathf.Min(screen.Width - 1, Mathf.Max(screenPos[0].x, screenPos[1].x, screenPos[2].x));
+            int minY = (int)Mathf.Max(0f, Mathf.Min(screenPos[0].y, screenPos[1].y, screenPos[2].y));
+            int maxY = (int)Mathf.Min(screen.Height - 1, Mathf.Max(screenPos[0].y, screenPos[1].y, screenPos[2].y));
 
             float area = SignedTriangleArea(screenPos[0], screenPos[1], screenPos[2]);
 
@@ -130,9 +132,13 @@ namespace VirtualGPU
                     if (alpha < 0 || beta < 0 || gamma < 0) continue;
 
                     float z = alpha * screenPos[0].z + beta * screenPos[1].z + gamma * screenPos[2].z;
+                    if (z >= framebuffer.ReadDepth(x, y)) continue;
+
+                    p.z = z;
+
                     FragmentInput data = new FragmentInput
                     {
-                        ScreenPos = new Vec3(x, y, z),
+                        ScreenPos = p,
                         UV = alpha * triangle.Vertex0.UV + beta * triangle.Vertex1.UV + gamma * triangle.Vertex2.UV,
                         Normal = normal,
                         VertexColor = alpha * triangle.Vertex0.Color + beta * triangle.Vertex1.Color + gamma * triangle.Vertex2.Color
@@ -140,20 +146,17 @@ namespace VirtualGPU
                     fragments.Add(data);
                 }
             }
-
-            return fragments;
         }
 
-        List<FragmentInput> DepthTest(List<FragmentInput> fragments)
+        void DepthTest(List<FragmentInput> fragments)
         {
-            List<FragmentInput> filtered = new List<FragmentInput>();
-            foreach (FragmentInput fragment in fragments)
+            for (int i = fragments.Count - 1; i >= 0; i--)
             {
+                FragmentInput fragment = fragments[i];
                 Vec3 position = fragment.ScreenPos;
-                if (framebuffer.ReadDepth((int)position.x, (int)position.y) > position.z)
-                    filtered.Add(fragment);
+                if (framebuffer.ReadDepth((int)position.x, (int)position.y) <= position.z)
+                    fragments.RemoveAt(i);
             }
-            return filtered;
         }
 
         Fragment[] FragmentShader(List<FragmentInput> inputs, Shader shader)

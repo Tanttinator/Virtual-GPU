@@ -2,11 +2,11 @@ using UnityEngine;
 
 namespace VirtualGPU
 {
-    public class Vec3
+    public struct Vec3
     {
-        public readonly float x;
-        public readonly float y;
-        public readonly float z;
+        public float x;
+        public float y;
+        public float z;
 
         public Vec3(float x, float y, float z)
         {

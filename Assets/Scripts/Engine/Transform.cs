@@ -4,7 +4,7 @@ namespace VirtualGPU
 {
     public class Transform
     {
-        public Vec3 Position { get; set; }
+        public Vec3 Position;
         Vec3 rotation;
         public Vec3 Rotation
         {
@@ -15,9 +15,9 @@ namespace VirtualGPU
                 Forward = (Mat4.Rotate(rotation) * new Vec3(0, 0, -1)).Normalize();
             }
         }
-        public Vec3 Scale { get; set; }
+        public Vec3 Scale;
 
-        public Vec3 Forward { get; private set; }
+        public Vec3 Forward;
 
         public Transform()
         {

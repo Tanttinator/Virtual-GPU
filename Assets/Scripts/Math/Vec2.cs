@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace VirtualGPU
 {
-    public class Vec2
+    public struct Vec2
     {
         public readonly float x;
         public readonly float y;

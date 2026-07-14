@@ -9,7 +9,7 @@ namespace VirtualGPU
 
     public class DirectionalLight : Light
     {
-        public Transform Transform { get; private set; } = new Transform();
+        public readonly Transform Transform = new Transform();
         public Color Color { get; private set; }
 
         public DirectionalLight(Color color)

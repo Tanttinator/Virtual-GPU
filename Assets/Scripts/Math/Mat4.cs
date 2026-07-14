@@ -2,13 +2,16 @@ using UnityEngine;
 
 namespace VirtualGPU
 {
-    public class Mat4
+    public struct Mat4
     {
-        public float[,] Elements { get; private set; }
-
-        public Mat4()
+        private float[,] elements;
+        public float[,] Elements
         {
-            Elements = new float[4, 4];
+            get
+            {
+                if (elements == null) elements = new float[4, 4];
+                return elements;
+            }
         }
 
         public static Mat4 Identity()
