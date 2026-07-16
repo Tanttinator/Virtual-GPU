@@ -92,9 +92,9 @@ namespace VirtualGPU
             },
             Normals = new Vec3[]
             {
-                new Vec3(0f, 0.4472f, -0.8944f), new Vec3(0f, 0.4472f, -0.8944f), new Vec3(0f, 0.4472f, -0.8944f),
-                new Vec3(-0.8944f, 0.4472f, 0f), new Vec3(-0.8944f, 0.4472f, 0f), new Vec3(-0.8944f, 0.4472f, 0f),
                 new Vec3(0f, 0.4472f, 0.8944f), new Vec3(0f, 0.4472f, 0.8944f), new Vec3(0f, 0.4472f, 0.8944f),
+                new Vec3(-0.8944f, 0.4472f, 0f), new Vec3(-0.8944f, 0.4472f, 0f), new Vec3(-0.8944f, 0.4472f, 0f),
+                new Vec3(0f, 0.4472f, -0.8944f), new Vec3(0f, 0.4472f, -0.8944f), new Vec3(0f, 0.4472f, -0.8944f),
                 new Vec3(0.8944f, 0.4472f, 0f), new Vec3(0.8944f, 0.4472f, 0f), new Vec3(0.8944f, 0.4472f, 0f),
                 new Vec3(0f, -1f, 0f), new Vec3(0f, -1f, 0f), new Vec3(0f, -1f, 0f), new Vec3(0f, -1f, 0f)
             },

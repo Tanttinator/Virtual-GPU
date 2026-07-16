@@ -19,6 +19,7 @@ namespace VirtualGPU
         Shader redShader;
         Shader vertexColorShader;
         Shader uvShader;
+        Shader normalsShader;
 
         Texture billCypherTexture;
         Sampler billCypherSampler;
@@ -40,12 +41,13 @@ namespace VirtualGPU
 
         public IEnumerator RunProgram()
         {
-            engine.Setup(1920, 1080);
+            engine.Setup(1280, 720);
 
             litShader = new LitShader();
             redShader = new UnlitShader(Color.red);
             vertexColorShader = new VertexColorShader();
             uvShader = new UVShader();
+            normalsShader = new NormalsShader();
 
             scene = new Scene();
 

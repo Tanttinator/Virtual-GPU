@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace VirtualGPU
@@ -13,6 +14,10 @@ namespace VirtualGPU
         float[] vertexBuffer;
         int[] indexBuffer;
 
+        (int color, int depth) framebufferA;
+        (int color, int depth) framebufferB;
+        bool swapped = false;
+
         public OpenGL(GPU gpu)
         {
             this.gpu = gpu;
@@ -25,6 +30,9 @@ namespace VirtualGPU
                 Width = width,
                 Height = height
             };
+
+            framebufferA = (gpu.CreateColorBuffer(width, height), gpu.CreateDepthBuffer(width, height));
+            framebufferB = (gpu.CreateColorBuffer(width, height), gpu.CreateDepthBuffer(width, height));
 
             return window;
         }
@@ -46,7 +54,9 @@ namespace VirtualGPU
 
         public void Clear()
         {
-            gpu.Clear(clearColor);
+            (int color, int depth) = swapped ? framebufferB : framebufferA;
+            gpu.ClearColor(color, clearColor);
+            gpu.ClearDepth(depth);
         }
 
         public void BindVertexBuffer(float[] buffer)
@@ -71,12 +81,24 @@ namespace VirtualGPU
 
         public void Draw(Shader shader)
         {
-            gpu.Draw(vertexBuffer, indexBuffer, shader);
+            Pipeline pipeline = new Pipeline()
+            {
+                ColorTarget = swapped ? framebufferB.color : framebufferA.color,
+                DepthTarget = swapped ? framebufferB.depth : framebufferA.depth,
+                Viewport = viewport,
+                Program = shader,
+                VertexBuffer = vertexBuffer,
+                IndexBuffer = indexBuffer
+            };
+
+            gpu.Execute(pipeline);
         }
 
         public void SwapBuffers()
         {
-            gpu.Present();
+            //gpu.Present();
+            swapped = !swapped;
+            gpu.Present(swapped ? framebufferA.color : framebufferB.color);
         }
     }
 
