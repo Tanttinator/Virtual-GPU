@@ -36,7 +36,7 @@ namespace VirtualGPU
             samplers[slot] = sampler;
         }
 
-        public void Draw(Vertex[] vertexBuffer, int[] indexBuffer, Shader shader)
+        public void Draw(float[] vertexBuffer, int[] indexBuffer, Shader shader)
         {
             Vertex[] vertices = InputAssembler(vertexBuffer);
             Varyings[] varyings = VertexShader(vertices, shader);
@@ -68,9 +68,26 @@ namespace VirtualGPU
         }
 
         // PIPELINE STAGES
-        Vertex[] InputAssembler(Vertex[] vertexBuffer)
+        Vertex[] InputAssembler(float[] vertexBuffer)
         {
-            return vertexBuffer;
+            int vertexStride = 3 + 3 + 2 + 4;
+            int vertexCount = vertexBuffer.Length / vertexStride;
+            Vertex[] vertices = new Vertex[vertexCount];
+
+            for (int i = 0; i < vertexCount; i++)
+            {
+                int startPos = i * vertexStride;
+                Vertex vertex = new Vertex()
+                {
+                    Position = new Vec3(vertexBuffer[startPos], vertexBuffer[startPos + 1], vertexBuffer[startPos + 2]),
+                    Normal = new Vec3(vertexBuffer[startPos + 3], vertexBuffer[startPos + 4], vertexBuffer[startPos + 5]),
+                    UV = new Vec2(vertexBuffer[startPos + 6], vertexBuffer[startPos + 7]),
+                    Color = new Color(vertexBuffer[startPos + 8], vertexBuffer[startPos + 9], vertexBuffer[startPos + 10], vertexBuffer[startPos + 11])
+                };
+                vertices[i] = vertex;
+            }
+
+            return vertices;
         }
 
         Varyings[] VertexShader(Vertex[] vertices, Shader shader)
@@ -108,6 +125,11 @@ namespace VirtualGPU
         bool Clipping(Triangle triangle)
         {
             return triangle.Vertex0.ClipPos.w <= 0 && triangle.Vertex1.ClipPos.w <= 0 && triangle.Vertex2.ClipPos.w <= 0;
+        }
+
+        bool BackfaceCulling(float signedTriangleArea)
+        {
+            return signedTriangleArea < 1;
         }
 
         void Rasterizer(Triangle triangle, Vec3[] screenPos, List<FragmentInput> fragments)
@@ -235,25 +257,28 @@ namespace VirtualGPU
         {
             return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2.0f;
         }
+    }
 
-        bool BackfaceCulling(float signedTriangleArea)
-        {
-            return signedTriangleArea < 1;
-        }
+    public struct Vertex
+    {
+        public Vec3 Position;
+        public Vec2 UV;
+        public Vec3 Normal;
+        public Color Color;
+    }
 
-        struct Triangle
-        {
-            public Varyings Vertex0;
-            public Varyings Vertex1;
-            public Varyings Vertex2;
-        }
+    struct Triangle
+    {
+        public Varyings Vertex0;
+        public Varyings Vertex1;
+        public Varyings Vertex2;
+    }
 
-        struct Fragment
-        {
-            public int ScreenX;
-            public int ScreenY;
-            public Color Color;
-            public float Depth;
-        }
+    struct Fragment
+    {
+        public int ScreenX;
+        public int ScreenY;
+        public Color Color;
+        public float Depth;
     }
 }

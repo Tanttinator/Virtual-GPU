@@ -10,7 +10,7 @@ namespace VirtualGPU
         Window currentWindow;
         (int startX, int startY, int width, int height) viewport;
         Color clearColor;
-        Vertex[] vertexBuffer;
+        float[] vertexBuffer;
         int[] indexBuffer;
 
         public OpenGL(GPU gpu)
@@ -49,7 +49,7 @@ namespace VirtualGPU
             gpu.Clear(clearColor);
         }
 
-        public void BindVertexBuffer(Vertex[] buffer)
+        public void BindVertexBuffer(float[] buffer)
         {
             vertexBuffer = buffer;
         }

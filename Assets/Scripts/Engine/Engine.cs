@@ -27,7 +27,7 @@ namespace VirtualGPU
             foreach (GameObject gameObject in scene.GameObjects)
             {
                 Mesh mesh = gameObject.Mesh;
-                openGl.BindVertexBuffer(mesh.Vertices);
+                openGl.BindVertexBuffer(mesh.GetVertexBuffer());
                 openGl.BindIndexBuffer(mesh.Indices);
 
                 Transform transform = gameObject.Transform;

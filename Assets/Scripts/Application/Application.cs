@@ -54,49 +54,7 @@ namespace VirtualGPU
             billCypher.Transform.Rotation = new Vec3(0, Mathf.PI / 4, 0);
             billCypher.Transform.Scale = new Vec3(settings.Scale, settings.Scale, 1);
 
-            billCypher.Mesh = new Mesh()
-            {
-                Vertices = new Vertex[]
-                {
-                    new Vertex(new Vec3(0f, 0.5f, 0f), new Vec2(0.5f, 1f)), // Top
-
-                    // Front face
-                    new Vertex(new Vec3(-0.5f, -0.5f, 0.5f), new Vec2(0, 0)),
-                    new Vertex(new Vec3(0.5f, -0.5f, 0.5f), new Vec2(1, 0)),
-
-                    // Back face
-                    new Vertex(new Vec3(0.5f, -0.5f, -0.5f), new Vec2(0, 0)),
-                    new Vertex(new Vec3(-0.5f, -0.5f, -0.5f), new Vec2(1, 0)),
-
-                    // Left face
-                    new Vertex(new Vec3(-0.5f, -0.5f, -0.5f), new Vec2(0, 0)),
-                    new Vertex(new Vec3(-0.5f, -0.5f, 0.5f), new Vec2(1, 0)),
-
-                    // Right face
-                    new Vertex(new Vec3(0.5f, -0.5f, 0.5f), new Vec2(0, 0)),
-                    new Vertex(new Vec3(0.5f, -0.5f, -0.5f), new Vec2(1, 0)),
-
-                    // Bottom face
-                    new Vertex(new Vec3(-0.5f, -0.5f, -0.5f), new Vec2(0, 0)),
-                    new Vertex(new Vec3(-0.5f, -0.5f, 0.5f), new Vec2(0, 1)),
-                    new Vertex(new Vec3(0.5f, -0.5f, 0.5f), new Vec2(1, 1)),
-                    new Vertex(new Vec3(0.5f, -0.5f, -0.5f), new Vec2(1, 0)),
-                },
-                Indices = new int[]
-                {
-                    // Front face
-                    1, 0, 2,
-                    // Back face
-                    3, 0, 4,
-                    // Left face
-                    5, 0, 6,
-                    // Right face
-                    7, 0, 8,
-                    // Bottom face
-                    9, 10, 11,
-                    9, 11, 12,
-                }
-            };
+            billCypher.Mesh = Mesh.Pyramid;
 
             billCypherTexture = new Texture(256, 256);
             billCypherTexture.SetPixels(settings.BillCypher.GetPixels());
