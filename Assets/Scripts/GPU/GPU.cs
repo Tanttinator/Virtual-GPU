@@ -121,14 +121,18 @@ namespace VirtualGPU
 
             float area = SignedTriangleArea(screenPos[0], screenPos[1], screenPos[2]);
 
+            if (BackfaceCulling(area)) return;
+
+            float invArea = 1f / area;
+
             for (int x = minX; x <= maxX; x++)
             {
                 for (int y = minY; y <= maxY; y++)
                 {
                     Vec3 p = new Vec3(x, y, 0);
-                    float alpha = SignedTriangleArea(p, screenPos[1], screenPos[2]) / area;
-                    float beta = SignedTriangleArea(p, screenPos[2], screenPos[0]) / area;
-                    float gamma = SignedTriangleArea(p, screenPos[0], screenPos[1]) / area;
+                    float alpha = SignedTriangleArea(p, screenPos[1], screenPos[2]) * invArea;
+                    float beta = SignedTriangleArea(p, screenPos[2], screenPos[0]) * invArea;
+                    float gamma = SignedTriangleArea(p, screenPos[0], screenPos[1]) * invArea;
                     if (alpha < 0 || beta < 0 || gamma < 0) continue;
 
                     float z = alpha * screenPos[0].z + beta * screenPos[1].z + gamma * screenPos[2].z;
@@ -230,6 +234,11 @@ namespace VirtualGPU
         float SignedTriangleArea(Vec3 a, Vec3 b, Vec3 c)
         {
             return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2.0f;
+        }
+
+        bool BackfaceCulling(float signedTriangleArea)
+        {
+            return signedTriangleArea < 1;
         }
 
         struct Triangle
