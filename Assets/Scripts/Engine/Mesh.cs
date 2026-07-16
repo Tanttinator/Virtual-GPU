@@ -75,11 +75,11 @@ namespace VirtualGPU
         {
             Vertices = new Vec3[]
             {
-                new Vec3(-0.5f, -0.5f, -0.5f), new Vec3(0f, 0.5f, 0f), new Vec3(0.5f, -0.5f, -0.5f), // Front
-                new Vec3(-0.5f, -0.5f, 0.5f), new Vec3(0f, 0.5f, 0f), new Vec3(-0.5f, -0.5f, -0.5f), // Left
-                new Vec3(0.5f, -0.5f, 0.5f), new Vec3(0f, 0.5f, 0f), new Vec3(-0.5f, -0.5f, 0.5f), // Back
-                new Vec3(0.5f, -0.5f, -0.5f), new Vec3(0f, 0.5f, 0f), new Vec3(0.5f, -0.5f, 0.5f), // Right
-                new Vec3(-0.5f, -0.5f, 0.5f), new Vec3(-0.5f, -0.5f, -0.5f), new Vec3(0.5f, -0.5f, -0.5f), new Vec3(0.5f, -0.5f, 0.5f) // Bottom
+                new Vec3(-0.5f, -0.5f, 0.5f), new Vec3(0f, 0.5f, 0f), new Vec3(0.5f, -0.5f, 0.5f), // Front
+                new Vec3(-0.5f, -0.5f, -0.5f), new Vec3(0f, 0.5f, 0f), new Vec3(-0.5f, -0.5f, 0.5f), // Left
+                new Vec3(0.5f, -0.5f, -0.5f), new Vec3(0f, 0.5f, 0f), new Vec3(-0.5f, -0.5f, -0.5f), // Back
+                new Vec3(0.5f, -0.5f, 0.5f), new Vec3(0f, 0.5f, 0f), new Vec3(0.5f, -0.5f, -0.5f), // Right
+                new Vec3(-0.5f, -0.5f, -0.5f), new Vec3(-0.5f, -0.5f, 0.5f), new Vec3(0.5f, -0.5f, 0.5f), new Vec3(0.5f, -0.5f, -0.5f) // Bottom
             },
             Indices = new int[]
             {
